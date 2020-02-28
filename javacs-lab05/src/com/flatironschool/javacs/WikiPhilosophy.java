@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jsoup.nodes.Attribute;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
@@ -35,6 +36,11 @@ public class WikiPhilosophy {
 		Elements paragraphs = wf.fetchWikipedia(url);
 
 		Element firstPara = paragraphs.get(0);
+
+		List<Attribute> attributes = firstPara.attributes().asList();
+
+		// base case -- if attribute contains philosophy return true and break the recursion
+		attributes.stream().anyMatch(attr -> attr.getValue().contains("Philosophy"));
 		
 		Iterable<Node> iter = new WikiNodeIterable(firstPara);
 		for (Node node: iter) {
@@ -43,9 +49,13 @@ public class WikiPhilosophy {
 			}
         }
 
-        // the following throws an exception so the test fails
-        // until you update the code
-        String msg = "Complete this lab by adding your code and removing this statement.";
-        throw new UnsupportedOperationException(msg);
+	}
+
+//	private Element clickOnLinks() {
+//
+//	}
+
+	private boolean isValidLink() {
+		return false;
 	}
 }
