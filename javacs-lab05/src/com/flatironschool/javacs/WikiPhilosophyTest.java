@@ -20,7 +20,7 @@ public class WikiPhilosophyTest {
 	 * Test method for {@link com.flatironschool.javacs.WikiPhilosophy#main(java.lang.String[])}.
 	 */
 	@Test
-	public void testMain() {
+	public void testMain() throws Exception {
 		// Because this lab is more open-ended than others, we can't provide unit
 		// tests.  Instead, we just check that you've modified WikiPhilosophy.java
 		// so it doesn't throw an exception.

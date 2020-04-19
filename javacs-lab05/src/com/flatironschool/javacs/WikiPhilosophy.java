@@ -24,6 +24,7 @@ public class WikiPhilosophy {
 	final static WikiFetcher wf = new WikiFetcher();
 	final static String philosophyPage = "/wiki/Philosophy";
 	final static String BASE_URL = "https://en.wikipedia.org";
+	static boolean success = false;
 	
 	/**
 	 * Tests a conjecture about Wikipedia and Philosophy.
@@ -38,40 +39,31 @@ public class WikiPhilosophy {
 	 * @param args
 	 * @throws IOException
 	 */
-	public static void main(String[] args) throws IOException {
-		
-        // some example code to get you started
-
+	public static void main(String[] args) throws Exception {
 		String url = "https://en.wikipedia.org/wiki/Java_(programming_language)";
 		Elements paragraphs = wf.fetchWikipedia(url);
 		Element secondPara = paragraphs.get(1);
-		boolean success = false;
 
 		Iterable<Node> iter = new WikiNodeIterable(secondPara);
-		try {
 			for (Node node: iter) {
 				if (isValid(node)) {
 					visit(node);
-					throw new Exception( "we did it");
+					break;
 				}
 			}
-		} catch (Exception e) {
-			System.out.println(e.getMessage());
-		} finally {
-			System.out.println("success: "+  philosophyPage + "found" + "\n" + "pages visited: " + visited.toString());
-		}
+		System.out.println("success: "+  success + "\n" + "pages visited: " + visited.toString());
 	}
 
+	// visit page, check if page is philosophy page, otherwise move to next page
 	private static boolean visit(Node node) throws Exception {
-		// if element is wikipedia page return true
 		Node bestNode = findBestNode(node);
-		// make a list of nodes and check if one has philosophy
 		final String url = bestNode.attr("href");
 
 		if (url.equals(philosophyPage)) {
+			success = true;
 			return true;
 		} else if (visited.contains(url)) {
-			throw new Exception("Page already visited");
+			throw new Exception("Page already visited" + "visited: " + visited.toString());
 		} else {
 			visited.add(url);
 			Elements paragraphs = wf.fetchWikipedia(BASE_URL + url);
@@ -94,16 +86,13 @@ public class WikiPhilosophy {
 	}
 
 	private static boolean isValid(Node node) {
-		if (node.childNodes().size() > 0) {
-			final Optional<Node> url = node.childNodes().stream().filter(childNode -> childNode.hasAttr("href")).findFirst();
-			return url.isPresent();
-		}
-		return false;
+		final Optional<Node> url = node.childNodes().stream().filter(childNode -> childNode.hasAttr("href")).findFirst();
+		return url.isPresent();
 	}
 
+	// searches child nodes for philosophy page and returns it, otherwise return first child node
 	private static Node findBestNode(Node node) {
-		final List<Node> nodeList = node.childNodes().stream().filter(childNode -> childNode.hasAttr("href")).collect(Collectors.toList());
-		nodeList.removeIf(removeable -> badUrls.contains(removeable.attr("href")));
+		final List<Node> nodeList = node.childNodes().stream().filter(childNode -> childNode.hasAttr("href") && !badUrls.contains(childNode.attr("href"))).collect(Collectors.toList());
 		final Optional<Node> philosophyNode = nodeList.stream().filter(childNode -> childNode.attr("href").equals("/wiki/Philosophy")).findFirst();
 		return philosophyNode.orElseGet(() -> nodeList.get(0));
 	}
