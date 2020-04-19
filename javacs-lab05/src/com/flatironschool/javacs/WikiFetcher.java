@@ -29,12 +29,12 @@ public class WikiFetcher {
 		// download and parse the document
 		Connection conn = Jsoup.connect(url);
 		Document doc = conn.get();
-
-		// select the content text and pull out the paragraphs.
 		Element content = doc.getElementById("mw-content-text");
 
-		// TODO: avoid selecting paragraphs from sidebars and boxouts
+		// select the content text and pull out the paragraphs.
 		Elements paras = content.select("p");
+
+		// TODO: avoid selecting paragraphs from sidebars and boxouts
 		return paras;
 	}
 

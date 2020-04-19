@@ -3,6 +3,8 @@ package com.flatironschool.javacs;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.jsoup.nodes.Attribute;
 import org.jsoup.nodes.Element;
@@ -10,10 +12,18 @@ import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
 
 import org.jsoup.select.Elements;
+import org.junit.Before;
+import sun.jvm.hotspot.jdi.ArrayReferenceImpl;
 
 public class WikiPhilosophy {
-	
+
+	final static List<String> visited = new ArrayList<>();
+	final static List<String> badUrls = new ArrayList<>();
+	static int redirects = 0;
+	final static int redirectLimit = 50;
 	final static WikiFetcher wf = new WikiFetcher();
+	final static String philosophyPage = "/wiki/Philosophy";
+	final static String BASE_URL = "https://en.wikipedia.org";
 	
 	/**
 	 * Tests a conjecture about Wikipedia and Philosophy.
@@ -34,28 +44,67 @@ public class WikiPhilosophy {
 
 		String url = "https://en.wikipedia.org/wiki/Java_(programming_language)";
 		Elements paragraphs = wf.fetchWikipedia(url);
+		Element secondPara = paragraphs.get(1);
+		boolean success = false;
 
-		Element firstPara = paragraphs.get(0);
-
-		List<Attribute> attributes = firstPara.attributes().asList();
-
-		// base case -- if attribute contains philosophy return true and break the recursion
-		attributes.stream().anyMatch(attr -> attr.getValue().contains("Philosophy"));
-		
-		Iterable<Node> iter = new WikiNodeIterable(firstPara);
-		for (Node node: iter) {
-			if (node instanceof TextNode) {
-				System.out.print(node);
+		Iterable<Node> iter = new WikiNodeIterable(secondPara);
+		try {
+			for (Node node: iter) {
+				if (isValid(node)) {
+					visit(node);
+					throw new Exception( "we did it");
+				}
 			}
-        }
-
+		} catch (Exception e) {
+			System.out.println(e.getMessage());
+		} finally {
+			System.out.println("success: "+  philosophyPage + "found" + "\n" + "pages visited: " + visited.toString());
+		}
 	}
 
-//	private Element clickOnLinks() {
-//
-//	}
+	private static boolean visit(Node node) throws Exception {
+		// if element is wikipedia page return true
+		Node bestNode = findBestNode(node);
+		// make a list of nodes and check if one has philosophy
+		final String url = bestNode.attr("href");
 
-	private boolean isValidLink() {
+		if (url.equals(philosophyPage)) {
+			return true;
+		} else if (visited.contains(url)) {
+			throw new Exception("Page already visited");
+		} else {
+			visited.add(url);
+			Elements paragraphs = wf.fetchWikipedia(BASE_URL + url);
+			Element firstPara = paragraphs.get(0);
+
+			Iterable<Node> iter = new WikiNodeIterable(firstPara);
+			for (Node childNode: iter) {
+				if(isValid(childNode)) {
+					return visit(childNode);
+				}
+			}
+			if (redirects > redirectLimit) {
+				throw new Exception("Philosophy page not found");
+			}
+			redirects++;
+			badUrls.add(url);
+			visit(node);
+		}
 		return false;
+	}
+
+	private static boolean isValid(Node node) {
+		if (node.childNodes().size() > 0) {
+			final Optional<Node> url = node.childNodes().stream().filter(childNode -> childNode.hasAttr("href")).findFirst();
+			return url.isPresent();
+		}
+		return false;
+	}
+
+	private static Node findBestNode(Node node) {
+		final List<Node> nodeList = node.childNodes().stream().filter(childNode -> childNode.hasAttr("href")).collect(Collectors.toList());
+		nodeList.removeIf(removeable -> badUrls.contains(removeable.attr("href")));
+		final Optional<Node> philosophyNode = nodeList.stream().filter(childNode -> childNode.attr("href").equals("/wiki/Philosophy")).findFirst();
+		return philosophyNode.orElseGet(() -> nodeList.get(0));
 	}
 }
