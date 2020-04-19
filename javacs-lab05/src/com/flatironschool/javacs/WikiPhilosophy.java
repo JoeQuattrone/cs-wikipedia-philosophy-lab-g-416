@@ -24,8 +24,7 @@ public class WikiPhilosophy {
 	final static WikiFetcher wf = new WikiFetcher();
 	final static String philosophyPage = "/wiki/Philosophy";
 	final static String BASE_URL = "https://en.wikipedia.org";
-	static boolean success = false;
-	
+
 	/**
 	 * Tests a conjecture about Wikipedia and Philosophy.
 	 * 
@@ -43,11 +42,13 @@ public class WikiPhilosophy {
 		String url = "https://en.wikipedia.org/wiki/Java_(programming_language)";
 		Elements paragraphs = wf.fetchWikipedia(url);
 		Element secondPara = paragraphs.get(1);
+		boolean success = false;
 
 		Iterable<Node> iter = new WikiNodeIterable(secondPara);
 			for (Node node: iter) {
 				if (isValid(node)) {
 					visit(node);
+					success = true;
 					break;
 				}
 			}
@@ -60,7 +61,7 @@ public class WikiPhilosophy {
 		final String url = bestNode.attr("href");
 
 		if (url.equals(philosophyPage)) {
-			success = true;
+			//success = true;
 			return true;
 		} else if (visited.contains(url)) {
 			throw new Exception("Page already visited" + "visited: " + visited.toString());
